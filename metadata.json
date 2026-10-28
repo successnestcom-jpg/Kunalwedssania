@@ -1,0 +1,6 @@
+{
+  "name": "3D Wedding Invitation & Gatefold Card Studio",
+  "description": "Luxury Indian & Punjabi Royal 3D Wedding Invitation website with interactive unrolling scroll, 3D gatefold invitation card, sacred Hathlewa macro ritual scratch card, live petal showers, Shehnai music synth, ceremonies itinerary, RSVP, and guest shareable links.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
