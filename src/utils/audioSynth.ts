@@ -1,6 +1,7 @@
 /**
  * Web Audio Sound Engine for Indian Wedding Ceremonies & Interactive UI
- * Synthesizes auspicious Shehnai, Flute, Tanpura drone, temple bells, coin scratching, and chimes.
+ * Handles both recorded romantic wedding tracks and procedural synthesis
+ * (Shehnai, temple bells, coin scratching, wax seal, and celebratory chimes).
  */
 
 class SoundEngine {
@@ -8,10 +9,56 @@ class SoundEngine {
   private isPlaying = false;
   private gainNode: GainNode | null = null;
   private musicInterval: any = null;
-  private currentPreset: 'shehnai' | 'flute' | 'sitar' | 'romantic' | 'nadaswaram' = 'shehnai';
+  private currentPreset: 'shehnai' | 'flute' | 'sitar' | 'romantic' | 'nadaswaram' = 'romantic';
+  private audioElement: HTMLAudioElement | null = null;
+  private audioTrackUrl: string = '/assets/aistudio/WhatsApp_Audio_2026-10-28_at_4.14.28_PM_60a49e95.mpeg';
+  private listeners: Set<(playing: boolean) => void> = new Set();
 
-  private init() {
-    if (!this.ctx) {
+  constructor() {
+    if (typeof window !== 'undefined') {
+      try {
+        this.audioElement = new Audio(this.audioTrackUrl);
+        this.audioElement.loop = true;
+        this.audioElement.preload = 'auto';
+
+        this.audioElement.addEventListener('play', () => {
+          this.isPlaying = true;
+          this.notifyListeners();
+        });
+
+        this.audioElement.addEventListener('pause', () => {
+          this.isPlaying = false;
+          this.notifyListeners();
+        });
+
+        this.audioElement.addEventListener('ended', () => {
+          this.isPlaying = false;
+          this.notifyListeners();
+        });
+      } catch (e) {
+        console.warn('Audio element initialization error:', e);
+      }
+    }
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach((listener) => {
+      try {
+        listener(this.isPlaying);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+
+  public subscribe(listener: (playing: boolean) => void): () => void {
+    this.listeners.add(listener);
+    listener(this.isPlaying);
+    return () => this.listeners.delete(listener);
+  }
+
+  private initCtx() {
+    if (!this.ctx && typeof window !== 'undefined') {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
@@ -19,6 +66,20 @@ class SoundEngine {
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
+    }
+  }
+
+  public setAudioTrackUrl(url: string) {
+    if (url && url !== this.audioTrackUrl) {
+      this.audioTrackUrl = url;
+      const wasPlaying = this.isPlaying;
+      if (this.audioElement) {
+        this.audioElement.pause();
+        this.audioElement.src = url;
+        if (wasPlaying) {
+          this.audioElement.play().catch(() => {});
+        }
+      }
     }
   }
 
@@ -30,8 +91,7 @@ class SoundEngine {
     return this.isPlaying;
   }
 
-  public toggleMusic(preset?: 'shehnai' | 'flute' | 'sitar' | 'romantic' | 'nadaswaram'): boolean {
-    if (preset) this.currentPreset = preset;
+  public toggleMusic(): boolean {
     if (this.isPlaying) {
       this.stopWeddingMusic();
       return false;
@@ -42,9 +102,50 @@ class SoundEngine {
   }
 
   public playWeddingMusic() {
-    this.init();
+    this.initCtx();
+
+    // 1. Prioritize playing the recorded romantic Punjabi audio track
+    if (this.audioElement) {
+      this.audioElement
+        .play()
+        .then(() => {
+          this.isPlaying = true;
+          this.notifyListeners();
+        })
+        .catch((err) => {
+          console.warn('Direct audio play failed, falling back to Web Audio synth:', err);
+          this.playSynthWeddingMusic();
+        });
+      return;
+    }
+
+    this.playSynthWeddingMusic();
+  }
+
+  public stopWeddingMusic() {
+    this.isPlaying = false;
+    this.notifyListeners();
+
+    if (this.audioElement) {
+      this.audioElement.pause();
+    }
+
+    if (this.musicInterval) {
+      clearInterval(this.musicInterval);
+      this.musicInterval = null;
+    }
+
+    if (this.ctx && this.gainNode) {
+      const now = this.ctx.currentTime;
+      this.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    }
+  }
+
+  // Synthesizer fallback
+  private playSynthWeddingMusic() {
     if (!this.ctx || this.isPlaying) return;
     this.isPlaying = true;
+    this.notifyListeners();
 
     const r = this.ctx.currentTime;
     const masterGain = this.ctx.createGain();
@@ -53,7 +154,6 @@ class SoundEngine {
     masterGain.connect(this.ctx.destination);
     this.gainNode = masterGain;
 
-    // 1. Auspicious Drone / Tanpura Harmonics (Root Sa = D = 146.83 Hz)
     const baseFreq = this.currentPreset === 'flute' ? 174.61 : 146.83;
     [baseFreq, baseFreq * 1.5, baseFreq * 2, baseFreq * 0.75].forEach((freq, idx) => {
       if (!this.ctx || !this.gainNode) return;
@@ -64,7 +164,6 @@ class SoundEngine {
       osc.type = idx % 2 === 0 ? 'triangle' : 'sawtooth';
       osc.frequency.setValueAtTime(freq, r);
 
-      // Subtle vibrato/swell for Indian classical drone
       const lfo = this.ctx.createOscillator();
       const lfoGain = this.ctx.createGain();
       lfo.frequency.setValueAtTime(0.18 + idx * 0.08, r);
@@ -74,7 +173,6 @@ class SoundEngine {
 
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(400 + idx * 70, r);
-
       gain.gain.setValueAtTime(0.035 / (idx + 1), r);
 
       osc.connect(filter);
@@ -83,9 +181,7 @@ class SoundEngine {
       osc.start(r);
     });
 
-    // 2. Ceremonial Melody Sequence (Raag Yaman / Bilawal festive wedding phrasing)
     const yamanScale = [293.66, 329.63, 369.99, 415.3, 440.0, 493.88, 554.37, 587.33];
-    // Traditional auspicious wedding raag motif: Pa Dha Ni Sa, Ga Ma Dha Ni Sa
     const melodyPattern = [0, 2, 4, 3, 2, 4, 5, 7, 6, 4, 2, 0, 1, 2, 4, 0, 4, 5, 7, 6, 4, 2, 0, 2];
     let noteIndex = 0;
 
@@ -100,26 +196,18 @@ class SoundEngine {
       const freq = yamanScale[noteOffset % yamanScale.length];
       noteIndex++;
 
-      // Shehnai/Bansuri characteristics
-      if (this.currentPreset === 'flute') {
-        osc.type = 'sine';
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(freq * 2.2, now);
-      } else {
-        osc.type = 'sawtooth'; // Shehnai reed bite
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(freq * 1.85, now);
-        filter.Q.setValueAtTime(2.8, now);
-      }
+      osc.type = 'sawtooth';
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(freq * 1.85, now);
+      filter.Q.setValueAtTime(2.8, now);
 
-      // Microtonal Meend (smooth pitch slide)
       osc.frequency.setValueAtTime(freq, now);
       osc.frequency.exponentialRampToValueAtTime(freq * 1.015, now + 0.25);
       osc.frequency.exponentialRampToValueAtTime(freq, now + 0.65);
 
       const duration = 1.2 + Math.random() * 0.6;
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.exponentialRampToValueAtTime(this.currentPreset === 'flute' ? 0.08 : 0.07, now + 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.07, now + 0.25);
       gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
       osc.connect(filter);
@@ -134,32 +222,9 @@ class SoundEngine {
     this.musicInterval = setInterval(playNextNote, 950);
   }
 
-  public stopWeddingMusic() {
-    this.isPlaying = false;
-    if (this.musicInterval) {
-      clearInterval(this.musicInterval);
-      this.musicInterval = null;
-    }
-    if (this.ctx && this.gainNode) {
-      const now = this.ctx.currentTime;
-      this.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-      setTimeout(() => {
-        if (!this.isPlaying && this.ctx) {
-          try {
-            this.ctx.close().then(() => {
-              this.ctx = null;
-            });
-          } catch {
-            this.ctx = null;
-          }
-        }
-      }, 900);
-    }
-  }
-
-  // Tactile sound effect when scratching coin across canvas
+  // Sound Effects
   public playScratchSound() {
-    this.init();
+    this.initCtx();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -176,9 +241,8 @@ class SoundEngine {
     osc.stop(now + 0.08);
   }
 
-  // Crisp card flip sound
   public playCardFlipSound() {
-    this.init();
+    this.initCtx();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     const bufferSize = Math.floor(this.ctx.sampleRate * 0.18);
@@ -207,9 +271,8 @@ class SoundEngine {
     source.start(now);
   }
 
-  // Auspicious temple bell resonance
   public playTempleBellSound() {
-    this.init();
+    this.initCtx();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     [
@@ -232,9 +295,8 @@ class SoundEngine {
     });
   }
 
-  // Royal wax seal stamp / crack
   public playWaxSealSound() {
-    this.init();
+    this.initCtx();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -250,9 +312,8 @@ class SoundEngine {
     osc.stop(now + 0.22);
   }
 
-  // Celestial blessing chime for petal showers & reveals
   public playBlessingChime() {
-    this.init();
+    this.initCtx();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     [587.33, 739.99, 880.0, 1174.66, 1479.98, 1760.0].forEach((freq, idx) => {
@@ -270,35 +331,8 @@ class SoundEngine {
     });
   }
 
-  // Rajputana Royal Chime
-  public playRajputanaChime() {
-    this.playTempleBellSound();
-    setTimeout(() => this.playBlessingChime(), 150);
-  }
-
-  // Church Chimes Sound
-  public playChurchChimesSound() {
-    this.init();
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
-      if (!this.ctx) return;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.12);
-      gain.gain.setValueAtTime(0.1, now + idx * 0.12);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 1.5);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now + idx * 0.12);
-      osc.stop(now + idx * 0.12 + 1.5);
-    });
-  }
-
-  // Celebratory night fireworks burst sound
   public playFireworkSound() {
-    this.init();
+    this.initCtx();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     const bufferSize = Math.floor(this.ctx.sampleRate * 0.5);

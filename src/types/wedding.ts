@@ -93,6 +93,8 @@ export interface WeddingConfig {
   culturalTheme: string;
   culturalInvocation: string;
   audioPreset: 'shehnai' | 'flute' | 'sitar' | 'romantic' | 'nadaswaram';
+  weddingSongUrl?: string;
+  gatewayPhotoUrl?: string;
   shloka?: string;
   shlokaMeaning?: string;
   poeticNote?: string;

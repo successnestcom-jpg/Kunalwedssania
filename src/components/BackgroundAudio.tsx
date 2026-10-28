@@ -6,37 +6,34 @@ interface BackgroundAudioProps {
   musicPreset?: 'shehnai' | 'flute' | 'sitar' | 'romantic' | 'nadaswaram';
 }
 
-export const BackgroundAudio: React.FC<BackgroundAudioProps> = ({ musicPreset = 'shehnai' }) => {
+export const BackgroundAudio: React.FC<BackgroundAudioProps> = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
 
-  const label =
-    musicPreset === 'flute'
-      ? 'Flute'
-      : musicPreset === 'sitar'
-      ? 'Sitar'
-      : musicPreset === 'romantic'
-      ? 'Melody'
-      : 'Shehnai';
+  useEffect(() => {
+    const unsubscribe = Sound.subscribe((playing) => {
+      setIsPlaying(playing);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const toggle = () => {
-    const active = Sound.toggleMusic(musicPreset);
-    setIsPlaying(active);
+    Sound.toggleMusic();
     setShowTooltip(false);
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowTooltip(false);
-    }, 6000);
+    }, 7000);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
       {showTooltip && !isPlaying && (
-        <span className="hidden sm:inline-block bg-neutral-900/85 backdrop-blur-md text-amber-200 text-xs px-3 py-1.5 rounded-full font-cinzel animate-pulse shadow-xl border border-amber-500/40">
-          Tap for {label} Music 🎵
+        <span className="hidden sm:inline-block bg-neutral-900/85 backdrop-blur-md text-amber-200 text-xs px-3.5 py-1.5 rounded-full font-cinzel animate-pulse shadow-xl border border-amber-500/40">
+          Tap for Romantic Love Song 🎵
         </span>
       )}
       <button
@@ -54,8 +51,8 @@ export const BackgroundAudio: React.FC<BackgroundAudioProps> = ({ musicPreset = 
           <>
             <Music className="w-5 h-5 animate-spin-slow text-amber-200" />
             <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500" />
             </span>
           </>
         ) : (

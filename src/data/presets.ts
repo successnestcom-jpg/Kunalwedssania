@@ -3,6 +3,8 @@ import { WeddingConfig } from '../types/wedding';
 // High-fidelity image URLs hosted on wedtale CDN
 export const ASSETS = {
   kunalSaniaArtwork: '/assets/aistudio/Gemini_Generated_Image_3jg3413jg3413jg3_670d7826.png',
+  kunalSaniaRealPhoto: '/assets/aistudio/WhatsApp_Image_2026-10-28_at_4.10.23_PM_24ea3598.jpeg',
+  weddingSongUrl: '/assets/aistudio/WhatsApp_Audio_2026-10-28_at_4.14.28_PM_60a49e95.mpeg',
   punjabiEmbrace: 'https://www.wedtale.shop/assets/punjabi_embrace_art_1788532200547-D2BVCeO_.jpg',
   royalVarmala: 'https://www.wedtale.shop/assets/royal_varmala_art_1788532216549-DxC3qr3C.jpg',
   hastamelapHands: 'https://www.wedtale.shop/assets/hastamelap_hands_art_1788532186106-vNm76WDx.jpg',
@@ -43,6 +45,8 @@ export const KUNAL_SANIA_CONFIG: WeddingConfig = {
   venueCity: 'Jim Corbett, Uttarakhand',
   venueAddress: 'LeafyLush Resort & Spa, Jim Corbett National Park, Ramnagar, Uttarakhand 244715',
   googleMapsUrl: 'https://maps.app.goo.gl/TH96rHzhNupFHvSG9',
+  gatewayPhotoUrl: ASSETS.kunalSaniaRealPhoto,
+  weddingSongUrl: ASSETS.weddingSongUrl,
   welcomeMessage:
     'With the eternal blessings of our revered elders Late Sh PL Makkar & Late Sh AK Bhatia, and the love of our parents Mrs. Uma & Mr. Sanjeev Makkar and Mrs. Pushpa & Mr. Rakesh Gusain, we invite you to join us in celebrating the wedding festivities of Kunal & Sania amidst the scenic wilderness of Jim Corbett.',
   scratchRevealHeading: '3D MACRO RITUAL CLOSE-UP: HATHLEWA',

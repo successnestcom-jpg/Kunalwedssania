@@ -5,6 +5,7 @@ import { PetalShower } from './PetalShower';
 import { HeroSection } from './HeroSection';
 import { DecorativeDivider } from './DecorativeDivider';
 import { GatefoldInvitation } from './GatefoldInvitation';
+import { GatewayRevealSection } from './GatewayRevealSection';
 import { ScratchCardSection } from './ScratchCardSection';
 import { CeremoniesSection } from './CeremoniesSection';
 import { PhotoGallerySection } from './PhotoGallerySection';
@@ -45,7 +46,7 @@ export const WeddingWebsite: React.FC<WeddingWebsiteProps> = ({ config }) => {
       id="wedding-website-container"
       className="relative w-full h-full min-h-screen overflow-y-auto overflow-x-hidden no-scrollbar bg-neutral-950 font-body scroll-smooth"
     >
-      {/* Background Shehnai / Raga Music Audio Player */}
+      {/* Background Romantic Music Audio Player */}
       <BackgroundAudio musicPreset={config.audioPreset} />
 
       {/* Floating 3D Petal Shower Canvas */}
@@ -69,6 +70,18 @@ export const WeddingWebsite: React.FC<WeddingWebsiteProps> = ({ config }) => {
 
       <DecorativeDivider
         variant="kaleerein"
+        label="॥ 3D PALACE GATEWAY REVEAL ॥"
+        isKerala={isKerala}
+      />
+
+      {/* Separate Section for 3D Gateway Reveal of the Couple Photo with Background Audio */}
+      <GatewayRevealSection
+        config={config}
+        onTriggerPetalShower={triggerPetalShower}
+      />
+
+      <DecorativeDivider
+        variant="kaleerein"
         label="॥ SACRED HATHLEWA UNION ॥"
         isKerala={isKerala}
       />
@@ -82,7 +95,7 @@ export const WeddingWebsite: React.FC<WeddingWebsiteProps> = ({ config }) => {
         isKerala={isKerala}
       />
 
-      {/* 3D Ceremonies Itinerary (Haldi, Jaago, Anand Karaj, Reception) */}
+      {/* 3D Ceremonies Itinerary (Henna & Happiness, The Royal Toast, Marigold Magic, Forever Begins) */}
       <CeremoniesSection
         config={config}
         onTriggerPetalShower={triggerPetalShower}
@@ -106,7 +119,7 @@ export const WeddingWebsite: React.FC<WeddingWebsiteProps> = ({ config }) => {
         isKerala={isKerala}
       />
 
-      {/* Venue Card: Taj Swarna Amritsar & Celebration Fireworks */}
+      {/* Venue Card: LeafyLush Resort & Spa, Jim Corbett, Google Maps & Celebration Fireworks */}
       <VenueSection config={config} />
 
       {/* Royal Footer with Monogram, WhatsApp share & copy link */}
